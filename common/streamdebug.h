@@ -32,7 +32,7 @@ class MessageStream;
 
 class Debug {
 public:
-	Debug(int level);
+	Debug(int level, const char *funcinfo);
 	Debug(const Debug &other);
 	~Debug();
 
@@ -57,8 +57,31 @@ private:
 	MessageStream *_stream;
 };
 
+/**
+ * Wrapper around Debug to be used with the streamDbg macro.
+ */
+class DebugWrapper {
+public:
+	DebugWrapper(const char *funcinfo) : _funcinfo(funcinfo) { }
+
+	inline Debug operator()(int level = -1) {
+		return Debug(level, _funcinfo);
+	}
+
+private:
+	const char *_funcinfo;
+};
+
 }
 
-Common::Debug streamDbg(int level = -1);
+#if defined(__GNUC__)
+#	define FUNC_INFO __PRETTY_FUNCTION__
+#elif defined(_MSC_VER) && _MSC_VER > 1300 /* MSVC 2002 doesn't have __FUNCSIG__*/
+#	define FUNC_INFO __FUNCSIG__
+#else
+#	define FUNC_INFO __FILE__ " (function unavailable)"
+#endif
+
+#define streamDbg Common::DebugWrapper(FUNC_INFO)
 
 #endif

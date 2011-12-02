@@ -41,9 +41,12 @@ public:
 	int level;
 };
 
-Debug::Debug(int level) :
+Debug::Debug(int level, const char *funcinfo) :
 	_stream(new MessageStream()) {
 	_stream->level = level;
+
+	_stream->msg += funcinfo;
+	operator<<(":");
 }
 
 Debug::Debug(const Debug &other) {
@@ -130,8 +133,3 @@ Debug &Debug::operator=(const Debug &other) {
 }
 
 }
-
-Common::Debug streamDbg(int level) {
-	return Common::Debug(level);
-}
-
