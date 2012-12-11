@@ -383,6 +383,9 @@ void GrimEngine::drawPrimitives() {
 		if (_movieSubtitle) {
 			_movieSubtitle->draw();
 		}
+		if (_objectDescription) {
+			_objectDescription->draw();
+		}
 	} else {
 		foreach (TextObject *t, TextObject::getPool()) {
 			t->draw();
@@ -1159,6 +1162,27 @@ void GrimEngine::setMovieSetup() {
 void GrimEngine::setMode(EngineMode mode) {
 	_mode = mode;
 	invalidateActiveActorsList();
+}
+
+void GrimEngine::setObjectDescription(const char *description) {
+	if (getGameType() != GType_GRIM) {
+		return;
+	}
+
+	if (description) {
+		if (!_objectDescription) {
+			_objectDescription = new TextObject(false, false);
+			_objectDescription->setDefaults(&_sayLineDefaults);
+			_objectDescription->setFGColor(Color(100, 200, 200));
+			_objectDescription->setX(640 / 2);
+			_objectDescription->setY(456);
+		}
+
+		_objectDescription->setText(description);
+	} else {
+		delete _objectDescription;
+		_movieSubtitle = NULL;
+	}
 }
 
 void GrimEngine::clearEventQueue() {

@@ -167,6 +167,7 @@ public:
 
 	void setMovieSubtitle(TextObject *to);
 	void setMovieSetup();
+	void setObjectDescription(const char *description);
 
 	void saveGame(const Common::String &file);
 	void loadGame(const Common::String &file);
@@ -238,6 +239,7 @@ private:
 	Actor *_selectedActor;
 	Iris *_iris;
 	TextObject::Ptr _movieSubtitle;
+	TextObject::Ptr _objectDescription;
 
 	bool _buildActiveActorsList;
 	Common::List<Actor *> _activeActors;

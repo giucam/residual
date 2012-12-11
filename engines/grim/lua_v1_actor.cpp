@@ -1100,6 +1100,8 @@ void Lua_V1::ActorLookAt() {
 
 		actor->setLookAtVectorZero();
 		actor->setLooking(false);
+		if (actor == g_grim->getSelectedActor())
+			g_grim->setObjectDescription(NULL);
 		// FIXME: When grabbing Chepito lua_getnumber(yObj) returns -3.50214
 		// which doesn't make any sense. I suspect that is a bug in Lua, since
 		// i couldn't find any call to manny:head_look_at(nil, -3.50214) while
@@ -1127,12 +1129,16 @@ void Lua_V1::ActorLookAt() {
 		Math::Vector3d vector;
 		vector.set(fX, fY, fZ);
 		actor->setLookAtVector(vector);
+		if (actor == g_grim->getSelectedActor())
+			g_grim->setObjectDescription(NULL);
 
 		if (lua_isnumber(rateObj))
 			actor->setLookAtRate(lua_getnumber(rateObj));
 	} else if (lua_isuserdata(xObj) && lua_tag(xObj) == MKTAG('A','C','T','R')) { // look at another actor
 		Actor *lookedAct = getactor(xObj);
 		actor->setLookAtVector(lookedAct->getPos());
+		if (actor == g_grim->getSelectedActor())
+			g_grim->setObjectDescription(lookedAct->getName().c_str());
 
 		if (lua_isnumber(yObj))
 			actor->setLookAtRate(lua_getnumber(yObj));
