@@ -485,6 +485,7 @@ void Actor::setRot(const Math::Angle &pitchParam, const Math::Angle &yawParam, c
 	_pitch = pitchParam;
 	setYaw(yawParam);
 	_moveYaw = _yaw;
+	_forwardYaw = _moveYaw;
 	_roll = rollParam;
 	_turning = false;
 }
@@ -565,6 +566,7 @@ void Actor::turnTo(const Math::Angle &pitchParam, const Math::Angle &yawParam, c
 	_movePitch = pitchParam;
 	_moveRoll = rollParam;
 	_moveYaw = yawParam;
+	_forwardYaw = _moveYaw;
 	_turnRateMultiplier = (snap ? 5.f : 1.f);
 	if (_yaw != yawParam || _pitch != pitchParam || _roll != rollParam) {
 		_turning = true;
@@ -776,6 +778,8 @@ void Actor::walkForward() {
 		backwards = true;
 	}
 
+	Math::Angle my = _forwardYaw;
+
 	int tries = 0;
 	while (dist > 0.0f) {
 		Sector *currSector = NULL, *prevSector = NULL, *startSector = NULL;
@@ -783,8 +787,8 @@ void Actor::walkForward() {
 
 		g_grim->getCurrSet()->findClosestSector(_pos, &currSector, &_pos);
 		if (!currSector) { // Shouldn't happen...
-			Math::Vector3d forwardVec(-_moveYaw.getSine() * _pitch.getCosine(),
-									  _moveYaw.getCosine() * _pitch.getCosine(), _pitch.getSine());
+			Math::Vector3d forwardVec(-my.getSine() * _pitch.getCosine(),
+									  my.getCosine() * _pitch.getCosine(), _pitch.getSine());
 
 			// EMI: Y is up-down, sectors use an X-Z plane for movement
 			if (g_grim->getGameType() == GType_MONKEY4) {
@@ -810,18 +814,18 @@ void Actor::walkForward() {
 				Math::Angle ax = Math::Vector2d(currSector->getNormal().x(), currSector->getNormal().z()).getAngle();
 				Math::Angle ay = Math::Vector2d(currSector->getNormal().y(), currSector->getNormal().z()).getAngle();
 
-				float z1 = -_moveYaw.getCosine() * (ay -_pitch).getCosine();
-				float z2 = _moveYaw.getSine() * (ax -_pitch).getCosine();
-				forwardVec = Math::Vector3d(-_moveYaw.getSine() * ax.getSine() * _pitch.getCosine(),
-										_moveYaw.getCosine() * ay.getSine() * _pitch.getCosine(), z1 + z2);
+				float z1 = -my.getCosine() * (ay -_pitch).getCosine();
+				float z2 = my.getSine() * (ax -_pitch).getCosine();
+				forwardVec = Math::Vector3d(-my.getSine() * ax.getSine() * _pitch.getCosine(),
+										my.getCosine() * ay.getSine() * _pitch.getCosine(), z1 + z2);
 			} else {
 				Math::Angle ax = Math::Vector2d(currSector->getNormal().x(), currSector->getNormal().y()).getAngle();
 				Math::Angle az = Math::Vector2d(currSector->getNormal().z(), currSector->getNormal().y()).getAngle();
 
-				float y1 = -_moveYaw.getCosine() * (az -_pitch).getCosine();
-				float y2 = _moveYaw.getSine() * (ax -_pitch).getCosine();
-				forwardVec = Math::Vector3d(_moveYaw.getSine() * ax.getSine() * _pitch.getCosine(), y1 + y2,
-											-_moveYaw.getCosine() * az.getSine() * _pitch.getCosine());
+				float y1 = -my.getCosine() * (az -_pitch).getCosine();
+				float y2 = my.getSine() * (ax -_pitch).getCosine();
+				forwardVec = Math::Vector3d(my.getSine() * ax.getSine() * _pitch.getCosine(), y1 + y2,
+											-my.getCosine() * az.getSine() * _pitch.getCosine());
 			}
 
 			if (backwards)
@@ -834,6 +838,10 @@ void Actor::walkForward() {
 			if (dist < exitDist) {
 				moveTo(_pos + puckVec * dist);
 				_walkedCur = true;
+
+				Math::Angle y = _forwardYaw;
+				turnTo(0, my, 0, true);
+				_forwardYaw = y;
 				return;
 			}
 			_pos = ei.exitPoint;
@@ -866,7 +874,10 @@ void Actor::walkForward() {
 			return;
 
 		ei.angleWithEdge += (float)1.0f;
-		turnTo(0, _moveYaw + ei.angleWithEdge * turnDir, 0, true);
+		Math::Angle y = _forwardYaw;
+		my = _forwardYaw + ei.angleWithEdge * turnDir;
+		turnTo(0, my, 0, true);
+		_forwardYaw = y;
 
 		if (oldDist <= dist + 0.001f) {
 			// If we didn't move at all, keep trying a couple more times
@@ -1016,6 +1027,7 @@ void Actor::turn(int dir) {
 	_walking = false;
 	float delta = g_grim->getPerSecond(_turnRate) * dir;
 	_moveYaw = _moveYaw + delta;
+	_forwardYaw = _moveYaw;
 	_turning = true;
 	_turnRateMultiplier = 5.f;
 	_currTurnDir = dir;
@@ -1391,6 +1403,9 @@ void Actor::update(uint frameTime) {
 				}
 			}
 		}
+	}
+	if (!_walkedCur && !_walkedLast) {
+		_forwardYaw = _moveYaw;
 	}
 
 	if (_leftTurnChore.isValid()) {

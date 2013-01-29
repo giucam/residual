@@ -558,6 +558,7 @@ private:
 	Color _talkColor;
 	Math::Vector3d _pos;
 	Math::Angle _pitch, _yaw, _roll;
+	Math::Angle _forwardYaw;
 	float _walkRate, _turnRate;
 
 	bool _followBoxes;	// Constrain to walkboxes
